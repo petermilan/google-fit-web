@@ -1,0 +1,20 @@
+scalar JSON
+
+type AuthUrl {
+  url: String
+}
+
+type AuthToken {
+  token: String
+}
+
+input Payload {
+  code: String
+}
+type Query {
+  getWeightData: JSON
+  getAuthUrl: AuthUrl
+  getAuthCodeToken(payload: Payload): AuthToken
+}
+
+
