@@ -1,46 +1,41 @@
-import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
-import React, { useState, useEffect } from 'react';
+import { gql } from '@apollo/client';
+import { useQuery } from "@apollo/client";
 import { Chart } from "react-google-charts";
 import { useNavigate } from 'react-router-dom';
 
-const client = new ApolloClient({
-  uri: 'http://127.0.0.1:8000/graphql',
-  cache: new InMemoryCache(),
-});
+const GET_WEIGHT_DATA = gql`
+  query GetWeightData {
+    getWeightData
+  }
+`;
 
 const Home = () => {
   const navigate = useNavigate();
-  const [data, setData] = useState();
   const token = localStorage.getItem('token');
-  const apiCall = async () => {
-    try {
-      const result = await client
-      .query({
-        context: {
-          headers: {
-            "authorization": `Bearer ${token}`
-          }
-        },
-        query: gql`
-          query GetWeightData {
-            getWeightData
-          }
-        `,
-      });
-      setData(result?.data?.getWeightData)
-    } catch (e) {
-      localStorage.removeItem('token');
-      navigate('/');
-    }
+
+  if (!token) {
+    navigate('/');
   }
 
-  useEffect(() => {
-    apiCall();
-  });
+  const {data, isError, isLoading} = useQuery(GET_WEIGHT_DATA)
+
+  if (isLoading) {
+    return <p> DATA IS LOADING...</p>;
+  }
+
+  if (isError) {
+    localStorage.removeItem('token');
+    navigate('/');
+  }
+
+  if (!data) {
+    return <p>No data</p>
+  }
+
   let previous = undefined;
   const chartData = [
     ["Date", "Weight"],
-  ].concat( data?.map(({ date, value }, index) => {
+  ].concat( data?.getWeightData?.map(({ date, value }, index) => {
     const weight = value ?? previous;
     const itmes = [date, weight];
     previous = weight;
