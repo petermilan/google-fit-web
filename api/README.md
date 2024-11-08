@@ -1,5 +1,4 @@
 # API
-Free time project to demonstrate usage of Google API.
 Simple wrapper over Google Fit api, which handles  oauth requests, and also communication to Google API.
 
 ## Install
