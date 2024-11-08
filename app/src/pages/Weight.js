@@ -1,71 +1,125 @@
 import { gql } from '@apollo/client';
 import { useQuery } from "@apollo/client";
+import { useRef } from 'react';
 import { Chart } from "react-google-charts";
 import { useNavigate } from 'react-router-dom';
 
 const GET_WEIGHT_DATA = gql`
-  query GetWeightData {
-    getWeightData
+  query GetWeightData($payload: WeightPayload) {
+    getWeightData(payload: $payload)
   }
 `;
 
-const Home = () => {
-  const navigate = useNavigate();
-  const token = localStorage.getItem('token');
-
-  if (!token) {
-    navigate('/');
-  }
-
-  const {data, isError, isLoading} = useQuery(GET_WEIGHT_DATA)
-
-  if (isLoading) {
-    return <p> DATA IS LOADING...</p>;
-  }
-
-  if (isError) {
-    localStorage.removeItem('token');
-    navigate('/');
-  }
-
-  if (!data) {
-    return <p>No data</p>
-  }
-
+const addMisingValues = (data) => {
   let previous = undefined;
-  const chartData = [
-    ["Date", "Weight"],
-  ].concat( data?.getWeightData?.map(({ date, value }, index) => {
+  return data.map(({ date, value }, index) => {
     const weight = value ?? previous;
     const itmes = [date, weight];
     previous = weight;
     return itmes;
-  }));
+  })
+};
+
+const buildChartData = (data) => {
+  const completeData = addMisingValues(data).map((item) => {
+    item[0] = new Date(Date.parse(item[0]));
+    return item;
+  });
+  return [
+    ["Date", "Weight"],
+  ].concat(completeData);
+}
+
+const Home = () => {
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const now = new Date();
+  if (!token) {
+    navigate('/');
+  }
+
+  const { data: dailyData, error: dailyError, isLoading: dailyIsLoading } = useQuery(GET_WEIGHT_DATA, {
+    variables: {
+      payload: {
+        value: 1,
+        type: 'day',
+        startTimeMillis: useRef(new Date(now.getFullYear(), now.getMonth() -1, 1)).current,
+        endTimeMillis: useRef(now).current,
+      }
+    }
+  });
+
+  const { data: monthlyData, error: monthlyError, isLoading: monthlyIsLoading } = useQuery(GET_WEIGHT_DATA, {
+    variables: {
+      payload: {
+        value: 1,
+        type: 'month',
+        startTimeMillis: useRef(new Date(now.getFullYear() -1, now.getMonth(), 1)).current,
+        endTimeMillis: useRef(now).current,
+      }
+    }
+  });
+
+  const { data: yearlyData, error: yearlyError, isLoading: yearlyIsLoading } = useQuery(GET_WEIGHT_DATA, {
+    variables: {
+      payload: {
+        value: 12,
+        type: 'month',
+        startTimeMillis: useRef(new Date(now.getFullYear() -5, now.getMonth(), 1)).current,
+        endTimeMillis: useRef(now).current,
+      }
+    }
+  });
+
+
+  if (dailyIsLoading || monthlyIsLoading || yearlyIsLoading) {
+    return <p> Loading...</p>;
+  }
+
+  if (dailyError || monthlyError || yearlyError) {
+    localStorage.removeItem('token');
+    navigate('/');
+  }
+
+  if (!dailyData || !monthlyData || !yearlyData) {
+    return <p> Loading...</p>
+  }
 
   const options = {
     title: "Weight",
     hAxis: {
       title: "Date",
-      gridlines: { count: 3 },
-      format: "m d, yyyy",
+
     },
     vAxis: { title: "Weight (kg)" },
-    legend: "none",
-    curveType: "function",
 
+    curveType: "function",
   };
 
   return (
     <div>
-      <h2>
-      Daily Weight Data
-      </h2>
-      Contains daily data from 1st day of previous month until now
+      <p>Last Month Daily Data</p>
       <Chart
         chartType="LineChart"
         width="100%"
-        height="400px"
-        data={chartData}
+        height="250px"
+        data={buildChartData(dailyData?.getWeightData)}
+        options={options}
+      />
+      <p>Last Year Monthly Data</p>
+      <Chart
+        chartType="LineChart"
+        width="100%"
+        height="250px"
+        data={buildChartData(monthlyData?.getWeightData)}
+        options={options}
+      />
+      <p>Last 5 Years Data</p>
+      <Chart
+        chartType="LineChart"
+        width="100%"
+        height="250px"
+        data={buildChartData(yearlyData?.getWeightData)}
         options={options}
       />
     </div>
