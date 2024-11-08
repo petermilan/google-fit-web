@@ -9,7 +9,8 @@ Web APP was just quickly crafted to be able to auth the user, and display the us
 
 
 
-<img width="1340" alt="image" src="https://github.com/user-attachments/assets/ea65eada-a14c-4388-8500-603aaacae5e9">
+<img width="1574" alt="image" src="https://github.com/user-attachments/assets/24a109bb-0a95-4348-8bf2-95c6fc732904">
+
 
 
 To setup the project you can follow steps in this nice tutorial https://www.ayoubkhial.com/blog/a-comprehensive-guide-to-connect-google-fit-api-with-expressjs
