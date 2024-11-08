@@ -12,7 +12,7 @@ const GET_WEIGHT_DATA = gql`
 
 const addMisingValues = (data) => {
   let previous = undefined;
-  return data.map(({ date, value }, index) => {
+  return data.map(({ date, value }) => {
     const weight = value ?? previous;
     const itmes = [date, weight];
     previous = weight;
@@ -22,7 +22,7 @@ const addMisingValues = (data) => {
 
 const buildChartData = (data) => {
   const completeData = addMisingValues(data).map((item) => {
-    item[0] = new Date(Date.parse(item[0]));
+    item[0] = new Date(item[0]);
     return item;
   });
   return [

@@ -98,7 +98,7 @@ export class FitnessApiService {
       });
       const page = result?.data?.bucket?.map((row) => {
         return {
-          date: new Date(Number(row?.startTimeMillis)).toDateString(),
+          date: new Date(Number(row?.startTimeMillis)),
           name: dataSourceIdToLabel(row?.dataset?.[0].dataSourceId),
           value: row?.dataset?.[0]?.point?.[0]?.value?.[0]?.fpVal,
         }
