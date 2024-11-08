@@ -10,9 +10,24 @@ export class FitnessApiResolver {
 
 
   @Query('getWeightData')
-  getWeightData(@Context() context) {
+  getWeightData(
+    @Context() context,
+    @Args('payload') payload: {
+      startTimeMillis: Date,
+      endTimeMillis: Date,
+      type: string,
+      value: number,
+    },
+  ) {
     const { headers } = context.req;
-    return this.fitnessApiService.getWeightData(extractTokenFromHeaders(headers));
+    const now = new Date();
+    return this.fitnessApiService.getWeightData(
+      extractTokenFromHeaders(headers),
+      payload?.startTimeMillis ?? new Date(now.getFullYear(), now.getMonth() -1, 1),
+      payload?.endTimeMillis ?? now,
+      payload?.type ?? 'day',
+      payload?.value ?? 1,
+    );
   }
   @Query('getAuthUrl')
   getAuthUrl() {

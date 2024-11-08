@@ -11,6 +11,28 @@ const dataSourceIdToLabel = (dataSourceId) => {
   return dataSourceId.split('com.google.')[1].replace(':', '');
 }
 
+const getPages = (startTimeMillis: Date, endTimeMillis: Date) => {
+  const pages = [];
+  let iterator = startTimeMillis;
+  while (iterator < endTimeMillis) {
+    const border = new Date(new Date(iterator).setMonth(iterator.getMonth() + 2) - 1);
+    if (border > endTimeMillis) {
+      pages.push({
+        start:iterator,
+        end: endTimeMillis
+      });
+      iterator = new Date(border.getTime() + 1);
+    } else {
+      pages.push({
+        start: iterator,
+        end: border,
+      });
+      iterator = new Date(border.getTime() + 1);
+    }
+  }
+  return pages;
+}
+
 const { OAuth2 } = google.auth;
 @Injectable()
 export class FitnessApiService {
@@ -37,40 +59,54 @@ export class FitnessApiService {
     return tokens.access_token;
   }
 
-  async getWeightData(token: string) {
-    const date = new Date();
+
+
+  async getWeightData(
+    token: string,
+    startTimeMillis: Date,
+    endTimeMillis: Date,
+    type: string,
+    value: number,
+  ) {
     this.oAuth2Client.setCredentials({ access_token: token });
     const fitnessStore = google.fitness({
       version: 'v1',
       auth: this.oAuth2Client,
     });
 
-    const requestBody = {
-      aggregateBy: [{
-        dataTypeName: WEIGHT_DATA_TYPE_NAME,
-        dataSourceId: WEIGHT_DATASOURCE_ID,
-      }],
-      bucketByTime: {
-        period: {
-          type: 'day',
-          value: 1,
-          timeZoneId: 'UTC'
+    let data = [];
+    for (const { start, end } of getPages(startTimeMillis, endTimeMillis)) {
+      const requestBody = {
+        aggregateBy: [{
+          dataTypeName: WEIGHT_DATA_TYPE_NAME,
+          dataSourceId: WEIGHT_DATASOURCE_ID,
+        }],
+        bucketByTime: {
+          period: {
+            type,
+            value,
+            timeZoneId: 'UTC'
+          },
         },
-      },
-      startTimeMillis: String(new Date(date.getFullYear(), date.getMonth() -1, 1).getTime()),
-      endTimeMillis: String(Date.now()),
-    };
-    const result = await fitnessStore.users.dataset.aggregate({
-      userId: 'me',
-      requestBody,
-    });
-    const data = result?.data?.bucket?.map((row) => {
-      return {
-        date: new Date(Number(row?.startTimeMillis)).toDateString(),
-        name: dataSourceIdToLabel(row?.dataset?.[0].dataSourceId),
-        value: row?.dataset?.[0]?.point?.[0]?.value?.[0]?.fpVal,
-      }
-    });
+        startTimeMillis: String(start.getTime()),
+        endTimeMillis: String(end.getTime()),
+      };
+
+      const result = await fitnessStore.users.dataset.aggregate({
+        userId: 'me',
+        requestBody,
+      });
+      const page = result?.data?.bucket?.map((row) => {
+        return {
+          date: new Date(Number(row?.startTimeMillis)).toDateString(),
+          name: dataSourceIdToLabel(row?.dataset?.[0].dataSourceId),
+          value: row?.dataset?.[0]?.point?.[0]?.value?.[0]?.fpVal,
+        }
+      });
+      data = data.concat(page);
+    }
+
     return data;
+
   }
 }

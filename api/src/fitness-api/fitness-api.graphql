@@ -1,4 +1,5 @@
 scalar JSON
+scalar DateTimeISO
 
 type AuthUrl {
   url: String
@@ -11,8 +12,15 @@ type AuthToken {
 input Payload {
   code: String
 }
+
+input WeightPayload {
+  startTimeMillis: DateTimeISO,
+  endTimeMillis: DateTimeISO,
+  type: String,
+  value: Int,
+}
 type Query {
-  getWeightData: JSON
+  getWeightData(payload: WeightPayload): JSON
   getAuthUrl: AuthUrl
   getAuthCodeToken(payload: Payload): AuthToken
 }

@@ -18,6 +18,7 @@ import { resolvers as scalarResolvers } from 'graphql-scalars';
       typePaths: ['./**/*.graphql'],
       resolvers: {
         JSON: scalarResolvers.JSON,
+        DateTimeISO: scalarResolvers.DateTimeISO,
       },
     }),
     FitnessApiModule,
